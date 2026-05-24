@@ -1,0 +1,13 @@
+.venv/
+.vscode/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+j
+MusicRecommenderDB/
+playlist.m3u8
+eval.py
+test.py
+convert.py
+temp.py
