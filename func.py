@@ -70,41 +70,48 @@ def open_file():
         filetypes=[("All files", "*.*")]
     )
 
-def show_toast(root, message, icon = None, duration=3000):
+def show_toast(root, message, icon=None, duration=30000):
 
-    if icon is None:
-        error_icon = root.toast_icon
+    error_icon = icon if icon else root.toast_icon
 
     toast = ctk.CTkToplevel(root)
     toast.overrideredirect(True)
     toast.attributes("-topmost", True)
 
-    frame = ctk.CTkFrame(toast, corner_radius=10,border_width=2, border_color="#F36C19")
-    frame.pack(padx=0, pady=0, fill="both", expand=True)
     bg = root.cget("fg_color")
-
     if isinstance(bg, tuple):
-        bg = bg[0]  # mode light/dark safe
+        bg = bg[0]
 
     toast.configure(fg_color=bg)
-    frame.configure(fg_color=bg)
+
+    frame = ctk.CTkFrame(
+        toast,
+        corner_radius=10,
+        border_width=2,
+        border_color="#F36C19",
+        fg_color=bg
+    )
+    frame.pack(fill="both", expand=True)
 
     label = ctk.CTkLabel(
         frame,
         text=message,
-        text_color="#F36C19",
         image=error_icon,
         compound="left",
+        text_color="#F36C19",
         font=("Arial", 12)
     )
     label.pack(padx=15, pady=10)
 
-    toast.update_idletasks()
+    def place_toast():
+        toast.update_idletasks()
 
-    x = root.winfo_rootx() + root.winfo_width() - toast.winfo_width() - 20
-    y = root.winfo_rooty() + root.winfo_height() - toast.winfo_height() - 20
+        x = root.winfo_rootx() + root.winfo_width() - toast.winfo_width() - 20
+        y = root.winfo_rooty() + root.winfo_height() - toast.winfo_height() - 20
 
-    toast.geometry(f"{toast.winfo_width()}x{toast.winfo_height()}+{x}+{y}")
+        toast.geometry(f"+{x}+{y}")
+
+    toast.after(10, place_toast)
 
     toast.after(duration, toast.destroy)
 

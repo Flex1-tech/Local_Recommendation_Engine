@@ -561,6 +561,9 @@ class App(ctk.CTk):
                 self,
                 "Aucun fichier audio valide sélectionné"
             )
+            if len(self.selected_files) == 0:
+                self.center_button.grid(row=2, column=0)
+                # self.center_button.configure(state="normal")
             return
 
         if len(valid_files) <= 3:

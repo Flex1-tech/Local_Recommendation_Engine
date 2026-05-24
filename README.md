@@ -276,6 +276,56 @@ python main.py
 
 ---
 
+# 🎬 Demo
+
+## Écran d’accueil
+
+<p align="center">
+  <img src="demo/Home.png" width="90%" alt="Home Screen">
+</p>
+
+---
+
+## Upload des fichiers
+
+<p align="center">
+  <img src="demo/end_upload.png" width="90%" alt="End Upload">
+</p>
+
+---
+
+## Chargement
+
+<p align="center">
+  <img src="demo/loader.png" width="90%" alt="AI Loader">
+</p>
+
+---
+
+## Like / Delete des morceaux
+
+<p align="center">
+  <img src="demo/like.png" width="90%" alt="Like Or Delete">
+</p>
+
+---
+
+## Chargement IA
+
+<p align="center">
+  <img src="demo/loader.png" width="90%" alt="AI Loader">
+</p>
+
+---
+
+## Playlist finale dans VLC
+
+<p align="center">
+  <img src="demo/vlc-end.png" width="90%" alt="VLC Playlist">
+</p>
+
+---
+
 # 🖥️ Interface utilisateur
 
 ## Caractéristiques UI
