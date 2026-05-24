@@ -1,264 +1,342 @@
 # 🎵 Musical Recommender System — Version 2
 
-> **Système de recommandation musicale intelligent basé sur l'IA, avec interface graphique moderne et base de données vectorielle.**
+![Python](https://img.shields.io/badge/Python-3.10+-blue?style=for-the-badge&logo=python)  
+![ONNX Runtime](https://img.shields.io/badge/ONNX-Runtime-orange?style=for-the-badge)  
+![LanceDB](https://img.shields.io/badge/LanceDB-Vector%20Database-black?style=for-the-badge)  
+![CustomTkinter](https://img.shields.io/badge/UI-CustomTkinter-green?style=for-the-badge)  
+![Offline](https://img.shields.io/badge/Mode-Offline-success?style=for-the-badge)  
+![License](https://img.shields.io/badge/License-Custom-red?style=for-the-badge)
 
-🔗 **Version 1** : *[lien à venir]*
+> **Système intelligent de recommandation musicale local basé sur l’analyse audio par IA, les embeddings vectoriels et un moteur de classement MMR.**
 
 ---
 
-## 📋 Table des matières
+# 📋 Table des matières
 
 - [Aperçu](#-aperçu)
+
 - [Fonctionnement](#-fonctionnement)
+
 - [Architecture](#-architecture)
+
 - [Pipeline ML](#-pipeline-ml)
+
 - [Installation](#-installation)
+
 - [Utilisation](#-utilisation)
+
 - [Base de données](#-base-de-données)
+
 - [Algorithme MMR](#-algorithme-mmr)
+
 - [Interface utilisateur](#-interface-utilisateur)
+
 - [Différences avec la v1](#-différences-avec-la-v1)
+
 - [Développement](#-développement)
+
+- [Captures](#-captures)
+
 - [Crédits](#-crédits)
+
 - [Licence](#-licence)
 
 ---
 
-## 🎯 Aperçu
+# 🎯 Aperçu
 
-Un système de recommandation musicale **local et hors-ligne**, basé sur l'analyse audio par deep learning. Il génère automatiquement une playlist personnalisée à partir de vos fichiers audio en apprenant de vos goûts via un système de likes.
+Musical Recommender System v2 est une application desktop moderne permettant de générer automatiquement des playlists personnalisées à partir de vos fichiers audio locaux.
 
-- 🖥️ Interface graphique moderne (CustomTkinter) avec thème clair/sombre
-- 🧠 Embeddings audio via CNN14 (ONNX Runtime, quantisé INT8)
-- 🗄️ Base de données vectorielle locale (LanceDB) — pas de serveur requis
-- 🎲 Algorithme MMR pour équilibrer pertinence et diversité
-- 🎧 Génération de playlist M3U8 avec lancement automatique VLC
+Le système fonctionne entièrement **hors-ligne** et apprend les préférences musicales de l’utilisateur à partir de morceaux likés.
+
+## Fonctionnalités principales
+
+- Interface graphique moderne avec **CustomTkinter**
+
+- Analyse audio via **Musicnn / ONNX Runtime**
+
+- Base de données vectorielle locale avec **LanceDB**
+
+- Cache intelligent des embeddings avec **BLAKE3**
+
+- Classement intelligent avec **MMR**
+
+- Génération automatique de playlist `.m3u8`
+
+- Lancement direct dans **VLC**
+
+- Support des thèmes clair / sombre
+
+- Import multi-fichiers audio
 
 ---
 
-## ✨ Fonctionnement
+# ⚙️ Fonctionnement
 
-1. **Importez** vos fichiers audio (MP3, FLAC, WAV…)
-2. **Likez** au moins 3 morceaux que vous aimez
-3. **Cliquez sur "Commencez"** — le système analyse vos fichiers en arrière-plan
-4. **VLC s'ouvre** automatiquement avec la playlist ordonnée
+## Workflow global
 
-Le système extrait un embedding pour chaque fichier via **CNN14**, calcule le vecteur moyen de vos morceaux likés (votre profil musical), puis classe l'ensemble de vos fichiers par pertinence et diversité grâce à l'algorithme **MMR**.
-
----
-
-## 🏗️ Architecture
-
+```text
+1. Importation des fichiers audio
+        ↓
+2. Sélection des morceaux favoris
+        ↓
+3. Analyse audio par IA
+        ↓
+4. Construction du profil utilisateur
+        ↓
+5. Classement intelligent MMR
+        ↓
+6. Génération de playlist
+        ↓
+7. Lecture automatique via VLC
 ```
+
+---
+
+# 🏗️ Architecture
+
+```text
 musical-recommender-v2/
 │
-├── main.py                  # Point d'entrée
-├── app.py                   # Interface graphique (CustomTkinter)
-├── func.py                  # Utilitaires UI (open_file, show_toast)
-├── func_ia.py               # Pipeline ML : embeddings, DB, MMR, playlist
-├── schema.py                # Schéma LanceDB (TrackEmbeddingModel)
+├── main.py
+├── app.py
+├── func.py
+├── extraction.py
+├── schema.py
 │
-├── cnn14_int8.onnx          # Modèle CNN14 quantisé INT8
+├── msd-musicnn-1.onnx
 ├── requirements.txt
 │
-├── assets/                  # Icônes et images UI
+├── assets/
 │   ├── light_upload.png
 │   ├── dark_upload.png
 │   ├── coeur_gris.png
 │   ├── coeur_rouge.png
-│   ├── streamline--delete-1-remix.png
-│   └── loader.png
+│   ├── loader.png
+│   └── banner.png
 │
-└── MusicRecommenderDB/      # Base LanceDB (créée automatiquement)
+└── MusicRecommenderDB/
     └── audio_embeddings.lance
 ```
 
 ---
 
-## 🧠 Pipeline ML
+# 🧠 Pipeline ML
 
-```
-Fichier audio
-     │
-     ▼
-ffmpeg → PCM float32 (32 kHz, mono)
-     │
-     ▼
-Découpage en segments de 10s
-→ sélection des 3 segments les plus énergétiques (RMS)
-     │
-     ▼
-CNN14 INT8 (ONNX Runtime) → 3 embeddings
-     │
-     ▼
-Mean pooling + normalisation L2 → vecteur 512d
-     │
-     ▼
-LanceDB (cache BLAKE3) → recalcul évité si déjà indexé
-     │
-     ▼
-Profil utilisateur = moyenne des vecteurs likés
-     │
-     ▼
-MMR Ranking (λ=0.7) → playlist ordonnée
+```text
+Audio File
+    ↓
+FFmpeg decoding
+    ↓
+PCM float32 16kHz mono
+    ↓
+Segmentation 10 secondes
+    ↓
+Sélection des segments représentatifs
+    ↓
+Musicnn (ONNX Runtime)
+    ↓
+Embeddings audio
+    ↓
+Mean Pooling + L2 Normalization
+    ↓
+Vecteur 200 dimensions
+    ↓
+LanceDB
+    ↓
+MMR Ranking
+    ↓
+Playlist finale
 ```
 
-### Optimisations ONNX Runtime
+## Optimisations ONNX Runtime
 
 ```python
 so.graph_optimization_level = ort.GraphOptimizationLevel.ORT_ENABLE_ALL
-so.intra_op_num_threads = max(1, cpu // 2)  # parallélisme contrôlé
-so.inter_op_num_threads = 1                  # séquentialité inter-op
+so.intra_op_num_threads = max(1, cpu // 2)
+so.inter_op_num_threads = 1
 ```
 
 ---
 
-## ⚙️ Installation
+# 🗄️ Base de données
 
-### Prérequis système
+Les embeddings audio sont stockés localement dans **LanceDB**.
 
-- Python 3.10+
-- [FFmpeg](https://ffmpeg.org/download.html) — accessible dans le PATH (décodage audio)
-- [VLC](https://www.videolan.org/) — accessible dans le PATH (lecture playlist)
+Chaque morceau possède un identifiant unique basé sur un hash **BLAKE3** du contenu du fichier.
 
-### Dépendances principales
+Ainsi :
 
-| Package         | Usage                       |
-| --------------- | --------------------------- |
-| `customtkinter` | Interface graphique         |
-| `onnxruntime`   | Inférence CNN14             |
-| `lancedb`       | Base de données vectorielle |
-| `blake3`        | Hash rapide des fichiers    |
-| `numpy`         | Calculs numériques          |
-| `Pillow`        | Gestion des icônes          |
+- un embedding n’est calculé qu’une seule fois ;
 
-### Setup
+- déplacer ou renommer un fichier ne force pas un recalcul ;
 
-```bash
-git clone https://github.com/<user>/musical-recommender-v2.git
-cd musical-recommender-v2
-
-python -m venv .venv
-
-# Windows
-.venv\Scripts\activate
-# Linux/macOS
-source .venv/bin/activate
-
-pip install -r requirements.txt
-```
-
-Placer `cnn14_int8.onnx` à la racine du projet, puis vérifier FFmpeg :
-
-```bash
-ffmpeg -version
-```
-
----
-
-## 🚀 Utilisation
-
-```bash
-python main.py
-```
-
-### Workflow
-
-| Étape             | Action                                                  |
-| ----------------- | ------------------------------------------------------- |
-| 1. Accueil        | Cliquer *"Importer mes musiques"*                       |
-| 2. Sélection      | Choisir vos fichiers audio dans l'explorateur           |
-| 3. Likes          | Cliquer ❤️ sur au moins 3 morceaux                      |
-| 4. Recommandation | Cliquer *"Commencez..!"* (s'active à partir de 3 likes) |
-| 5. Résultat       | `playlist.m3u8` généré, VLC s'ouvre automatiquement     |
-
-### Contrôles
-
-| Élément               | Action                                    |
-| --------------------- | ----------------------------------------- |
-| 🔍 Barre de recherche | Filtrer la bibliothèque par nom           |
-| 🗑️ Icône poubelle    | Retirer un fichier de la sélection        |
-| ❤️ Cœur               | Like / Unlike un morceau                  |
-| 🔄 Réinitialiser      | Vider la sélection et revenir à l'accueil |
-
----
-
-## 🗄️ Base de données
-
-Les embeddings sont stockés localement dans `MusicRecommenderDB/` (LanceDB). Chaque fichier est identifié par son hash **BLAKE3** sur le contenu — si vous déplacez ou renommez un fichier, son embedding est retrouvé en base et le chemin est mis à jour automatiquement. Le modèle CNN14 ne tourne qu'**une seule fois par fichier**.
+- les chemins sont mis à jour automatiquement.
 
 ```python
 class TrackEmbeddingModel(LanceModel):
     file_name: str
     file_path: str
-    file_hash: str       # BLAKE3 — identifiant unique
+    file_hash: str
     file_size_bytes: int
-    vector: Vector(512)  # Embedding CNN14
+    vector: Vector(200)
 ```
 
 ---
 
-## 🎲 Algorithme MMR
+# 🎲 Algorithme MMR
 
-Le **Maximal Marginal Relevance** équilibre pertinence et diversité à chaque sélection :
+Le système utilise **Maximal Marginal Relevance (MMR)** afin d’équilibrer :
 
+- la pertinence musicale ;
+
+- la diversité des recommandations.
+
+## Formule
+
+```text
+MMR_score =
+λ × sim(profil, candidat)
+−
+(1 − λ) × max_sim(candidat, sélectionnés)
 ```
-MMR_score = λ × sim(profil, candidat) − (1−λ) × max_sim(candidat, déjà_sélectionnés)
-```
 
-| λ              | Comportement                           |
-| -------------- | -------------------------------------- |
-| `0.7` (défaut) | 70% pertinence, 30% diversité          |
-| `1.0`          | Pure pertinence (risque de redondance) |
-| `0.0`          | Pure diversité (exploration maximale)  |
-
-Les morceaux likés sont inclus dans la playlist finale — leur haute similarité avec le profil utilisateur les fait naturellement remonter en tête.
+| λ   | Résultat                       |
+| --- | ------------------------------ |
+| 1.0 | Pertinence maximale            |
+| 0.7 | Équilibre pertinence/diversité |
+| 0.0 | Diversité maximale             |
 
 ---
 
-## 🖥️ Interface utilisateur
+# 🚀 Installation
 
-- **Layout** : `grid` exclusif sur `main_frame` (aucun mix `pack`/`place`)
-- **Deux boutons contextuels** : `center_button` (accueil) ↔ `import_button` (barre du bas)
-- **Threading** : l'inférence tourne dans un thread dédié — l'UI reste réactive
-- **Loader animé** : 24 frames à 50ms, fond cohérent avec `main_frame`
-- **Palette** : Orange `#FF8E25` · Hover `#F36C19`
+## Prérequis
 
-| État           | Description                                                  |
-| -------------- | ------------------------------------------------------------ |
-| Accueil        | Bouton import centré, label accroche                         |
-| Import         | Loader animé + "Chargement..."                               |
-| Bibliothèque   | Barre recherche · compteur · liste scrollable · barre du bas |
-| Recommandation | Loader plein écran → toast succès → VLC                      |
+- Python 3.10+
 
----
+- FFmpeg
 
-## 🔄 Différences avec la v1
+- VLC Media Player
 
-|             | v1                   | v2                                                        |
-| ----------- | -------------------- | --------------------------------------------------------- |
-| Interface   | *(voir v1)*          | CustomTkinter redesigné, loader animé, recherche, reset   |
-| Layout      | `place()` uniquement | `grid` sur `main_frame`, deux boutons distincts           |
-| Threading   | —                    | Thread dédié pour l'inférence, UI non bloquée             |
-| Playlist    | —                    | Tous les fichiers classés, likés inclus                   |
-| Cache       | —                    | LanceDB + hash BLAKE3, chemins mis à jour automatiquement |
-| Requêtes DB | `find_one`           | `search().where().to_pandas()` + `iloc[0]`                |
-
----
-
-## 🔧 Développement
+## Clonage
 
 ```bash
-# Vérifier le modèle
-python -c "from func_ia import load_cnn14; s = load_cnn14(); print('CNN14 OK')"
+git clone https://github.com/Flex1-tech/Local_Recommendation_Engine.git
 
-# Vérifier la base
-python -c "from func_ia import initialize_database; t = initialize_database('.'); print(t.count_rows(), 'entrées')"
+cd musical-recommender-v2
+```
 
-# Tester un embedding
+## Environnement virtuel
+
+### Windows
+
+```bash
+python -m venv .venv
+.venv\Scripts\activate
+```
+
+### Linux / macOS
+
+```bash
+python -m venv .venv
+source .venv/bin/activate
+```
+
+## Installation des dépendances
+
+```bash
+pip install -r requirements.txt
+```
+
+## Vérification
+
+```bash
+ffmpeg -version
+vlc --version
+```
+
+---
+
+# ▶️ Utilisation
+
+```bash
+python main.py
+```
+
+## Étapes
+
+| Étape    | Description                      |
+| -------- | -------------------------------- |
+| Import   | Ajouter des fichiers audio       |
+| Likes    | Sélectionner au moins 3 morceaux |
+| Analyse  | Lancer le moteur IA              |
+| Playlist | Génération automatique           |
+| Lecture  | Ouverture automatique VLC        |
+
+---
+
+# 🖥️ Interface utilisateur
+
+## Caractéristiques UI
+
+- Interface responsive avec `grid`
+
+- Thread dédié pour l’inférence
+
+- UI non bloquante
+
+- Loader animé
+
+- Barre de recherche dynamique
+
+- Gestion thème clair/sombre
+
+- Toasts et feedback utilisateur
+
+## Palette
+
+| Élément          | Couleur   |
+| ---------------- | --------- |
+| Accent principal | `#FF8E25` |
+| Hover            | `#F36C19` |
+
+---
+
+# 🔄 Différences avec la v1
+
+| Fonctionnalité        | v1      | v2      |
+| --------------------- | ------- | ------- |
+| Interface moderne     | ❌       | ✅       |
+| Recherche dynamique   | ❌       | ✅       |
+| Threading UI          | ❌       | ✅       |
+| LanceDB               | ❌       | ✅       |
+| Cache embeddings      | ❌       | ✅       |
+| MMR Ranking           | ❌       | ✅       |
+| Playlist intelligente | Basique | Avancée |
+
+---
+
+# 🔧 Développement
+
+## Vérifier le modèle
+
+```bash
+python -c "from extraction import load_musicnn; s = load_musicnn(); print('Musicnn OK')"
+```
+
+## Vérifier la base
+
+```bash
+python -c "from extraction import initialize_database; t = initialize_database('.'); print(t.count_rows(), 'entrées')"
+```
+
+## Tester un embedding
+
+```bash
 python -c "
-from func_ia import compute_embedding, load_cnn14
-s = load_cnn14()
+from extraction import compute_embedding, load_musicnn
+s = load_musicnn()
 v = compute_embedding('test.mp3', s)
 print(v.shape if v is not None else 'None')
 "
@@ -266,18 +344,69 @@ print(v.shape if v is not None else 'None')
 
 ---
 
-## 🙏 Crédits
+# 🙏 Crédits
 
-- **Modèle CNN14** : [Qiuqiang Kong — PANNs](https://github.com/qiuqiangkong/audioset_tagging_cnn)
-- **Interface** : [CustomTkinter](https://github.com/TomSchimansky/CustomTkinter) (Tom Schimansky)
-- **Base de données** : [LanceDB](https://lancedb.com/)
-- **Hashing** : [BLAKE3](https://github.com/BLAKE3-team/BLAKE3)
+- **Musicnn / Essentia**
+  
+  - [Index of /models/feature-extractors/musicnn/](https://essentia.upf.edu/models/feature-extractors/musicnn/)
 
----
+- **CustomTkinter**
+  
+  - [GitHub - TomSchimansky/CustomTkinter: A modern and customizable python UI-library based on Tkinter · GitHub](https://github.com/TomSchimansky/CustomTkinter)
 
-## 📄 Licence
+- **LanceDB**
+  
+  - [https://lancedb.com/](https://lancedb.com/)
 
-MIT
+- **BLAKE3**
+  
+  - [GitHub - BLAKE3-team/BLAKE3: the official Rust and C implementations of the BLAKE3 cryptographic hash function · GitHub](https://github.com/BLAKE3-team/BLAKE3)
+
+--- 
+
+## Custom Non-Commercial License (CNC-L)
+
+##### Version 1.0 — © 2026 Flex1-tech. Tous droits réservés.
+
+Le présent accord de licence (la « Licence ») régit l'utilisation, la copie et la distribution du projet et de l'ensemble de ses fichiers associés (le « Logiciel ») développés par Flex1-tech (l' « Auteur »).
+
+En téléchargeant, installant ou utilisant le Logiciel, vous acceptez d'être lié par les termes de cette Licence.
+
+1. **Usages Autorisés (Gratuits)**
+
+L'Auteur concède par la présente une licence mondiale, non exclusive et non transférable, permettant d'utiliser le Logiciel à titre gratuit exclusivement pour les finalités suivantes :
+
+- **Usage Personnel** : Utilisation privée par un individu à des fins strictement non lucratives.
+
+- **Usage Éducatif et Recherche** : Utilisation au sein d'établissements scolaires, universitaires ou de laboratoires de recherche publique.
+
+- **Expérimentation** : Tests, évaluation technique et contributions non commerciales au code source.
+2. **Restrictions et Usages Commerciaux Interdits***
+
+Tout usage non expressément autorisé à l'Article 1 est formellement interdit sans l'obtention préalable d'une Licence Commerciale écrite et signée par l'Auteur. Sont notamment qualifiés d'usages commerciaux :
+
+- **Intégration** : L'inclusion du Logiciel, en tout ou partie, dans un produit, service ou infrastructure d'une entité commerciale.
+
+- **Monétisation** : L'utilisation du Logiciel pour générer des revenus, directs ou indirects (abonnements, services payants, support technique facturé, affichage publicitaire).
+
+- **Redistribution** : La redistribution, la revente ou la sous-licence du Logiciel à des fins commerciales.
+3. **Processus de Commercialisation et Partage de Revenus***
+
+Si vous souhaitez exploiter le Logiciel à des fins commerciales, vous devez impérativement régulariser votre situation :
+
+- **Demande Obligatoire** : Contactez l'Auteur avant toute mise en exploitation.
+
+- **Accord au Cas par Cas** : Les modalités d'octroi de la licence commerciale feront l'objet d'un contrat d'exploitation distinct.
+
+- **Compensation et Royalties** : L'accord commercial exigera une compensation financière, sous forme de redevances fixes ou d'un partage de revenus (royalties) proportionnel aux gains générés par l'exploitation du Logiciel.
+4. **Violation et Résiliation***
+
+Toute utilisation du Logiciel en violation de la présente Licence entraînera la résiliation automatique et immédiate de vos droits d'usage. L'Auteur se réserve le droit d'engager des poursuites judiciaires pour contrefaçon et de réclamer des dommages-intérêts équivalents au préjudice financier subi.
+
+**Contact pour les Licences Professionnelles***
+
+Pour toute demande de partenariat, de licence commerciale ou de devis :  
+📩 **[Mail](mailto:sethakplogan@gmail.com)**
 
 ---
 

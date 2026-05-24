@@ -1,37 +1,35 @@
 from functools import partial
 import subprocess
-import sys
-
 from PIL import Image
 import customtkinter as ctk
-from func import open_file, show_toast
-from extraction import recommend_playlist, initialize_database, load_cnn14, make_m3u
+from func import is_audio_file, is_valid_media, open_file, show_toast
+from extraction import recommend_playlist, initialize_database, load_musicnn, make_m3u
 from pathlib import Path
 import threading 
-
-upload_icon = ctk.CTkImage(light_image=Image.open("assets/light_upload.png"),dark_image=Image.open("assets/dark_upload.png"), size=(30, 30))
-start_icon = ctk.CTkImage(light_image=Image.open("assets/start.png"), dark_image=Image.open("assets/start_light.png"), size=(30, 30))
-remove_icon = ctk.CTkImage(Image.open('assets/streamline--delete-1-remix.png'),size=(20,20))
-heart_off = ctk.CTkImage(Image.open("assets/coeur_gris.png"), size=(30, 30))
-heart_on = ctk.CTkImage(Image.open("assets/coeur_rouge.png"), size=(30, 30))
-
-# customtkinter.set_appearance_mode("System")  # "Light" ou "Dark"
-# customtkinter.set_default_color_theme("green") 76
 
 
 class App(ctk.CTk):
     def __init__(self):
         super().__init__()
+
+        # Chargement des images 
+        self.upload_icon = ctk.CTkImage(light_image=Image.open("assets/light_upload.png"),dark_image=Image.open("assets/dark_upload.png"), size=(30, 30))
+        self.start_icon = ctk.CTkImage(light_image=Image.open("assets/start.png"), dark_image=Image.open("assets/start_light.png"), size=(30, 30))
+        self.remove_icon = ctk.CTkImage(Image.open('assets/streamline--delete-1-remix.png'),size=(20,20))
+        self.heart_off = ctk.CTkImage(Image.open("assets/coeur_gris.png"), size=(30, 30))
+        self.heart_on = ctk.CTkImage(Image.open("assets/coeur_rouge.png"), size=(30, 30))
+        self.toast_icon = ctk.CTkImage(Image.open("assets/error.png"), size=(20, 20))
+
+        # Chargement des outils de recommandation
+        self.session = None
+        self.table = None
+
         self.selected_files = {}
         self.file_frame = None
         self.start_button = None
         screen_width = self.winfo_screenwidth()
         screen_height = self.winfo_screenheight()
         self.loader_base = Image.open("assets/loader.png")
-        self.loader_frames = [
-            ctk.CTkImage(self.loader_base.rotate(angle), size=(40, 40))
-            for angle in range(0, 360, 15)
-        ]
         self.loader_index = 0
         self.loading = False
         self.file_widgets = {}
@@ -72,7 +70,7 @@ class App(ctk.CTk):
             text="Importer plus!",
             fg_color="#FF8E25",
             hover_color="#F36C19",
-            image=upload_icon,
+            image=self.upload_icon,
             compound="left",
             font=("Arial", 18),
             command=self.import_files
@@ -84,7 +82,7 @@ class App(ctk.CTk):
             state="disabled", 
             fg_color="#FF8E25", 
             hover_color="#F36C19",
-            image=start_icon,
+            image=self.start_icon,
             compound="left",
             command=self.start
         )
@@ -93,9 +91,9 @@ class App(ctk.CTk):
 
         # Barre de recherche
         self.search_visible = False
+        self.search_after_id = None
         self.top_bar = ctk.CTkFrame(self.main_frame, fg_color="transparent")
         self.search_entry = ctk.CTkEntry(self.top_bar, placeholder_text="Rechercher une musique...", width=250, font=("Arial", 14))
-        self.search_entry.bind("<KeyRelease>", lambda event: self.refresh_file_list())
         self.search_entry.pack(side="left", padx=10)
         
         # Reinitialisation
@@ -113,15 +111,14 @@ class App(ctk.CTk):
         )
         self.label.grid(row=1, column=0, pady=(50,1), sticky="ew")
 
-        self.loader_label = ctk.CTkLabel(self.main_frame, text="")
-        self.loader_text = ctk.CTkLabel(self.main_frame, text="Chargement...", font=("Arial", 16, "bold"))
+        self.progress = ctk.CTkProgressBar(self.main_frame, mode="indeterminate", width=250, height=20, border_width=2, corner_radius=10, border_color="#F36C19", progress_color="#F36C19")
 
         self.center_button = ctk.CTkButton(
             self.main_frame,
             text="Importer mes musiques",
             fg_color="#FF8E25",
             hover_color="#F36C19",
-            image=upload_icon,
+            image=self.upload_icon,
             compound="left",
             font=("Arial", 17),
             command=self.import_files,
@@ -129,18 +126,33 @@ class App(ctk.CTk):
         self.center_button.grid(row=2, column=0)
 
         # événements
-        self.search_entry.bind("<KeyRelease>", lambda e: self.refresh_file_list())
+        self.search_entry.bind("<KeyRelease>", self.on_search)
         self.search_entry.bind("<FocusIn>", lambda e: self.search_entry.configure(border_color="#F36C19"))
         self.search_entry.bind("<FocusOut>", lambda e: self.search_entry.configure(border_color="#444"))
         # Sur chaque widget cliquable, retirer le focus de la search bar
         self.bind_all("<Button-1>", lambda e: self.focus_set() if not str(e.widget).startswith(str(self.search_entry)) else None)
 
-    def import_files(self):
-        # afficher loader
-        self.show_loader()
-        thread = threading.Thread(target=self.load_files, daemon=True)
-        thread.start()
+        threading.Thread(
+            target=self.preload_resources,
+            daemon=True
+        ).start()
 
+    def import_files(self):
+
+        file_paths = open_file()
+
+        if not file_paths:
+            self.on_files_cancelled()
+            return
+
+        self.show_loader()
+
+        threading.Thread(
+            target=self.validate_files,
+            args=(file_paths,),
+            daemon=True
+        ).start()
+    
     def get_selected_files(self):
         return self.selected_files
     
@@ -212,7 +224,6 @@ class App(ctk.CTk):
 
         # 7. remettre le bouton au centre
         self.center_button.grid(row=2, column=0)
-        self.main_frame.update_idletasks()
         self.update_idletasks()
 
     def toggle_like(self, file, like_btn):
@@ -220,12 +231,12 @@ class App(ctk.CTk):
 
         # Changer l'image
         like_btn.configure(
-            image=heart_on if self.selected_files[file] else heart_off
+            image=self.heart_on if self.selected_files[file] else self.heart_off
         )
         self.update_start_button()
 
     def get_heart_icon(self, file):
-        return heart_on if self.selected_files[file] else heart_off
+        return self.heart_on if self.selected_files[file] else self.heart_off
 
     def load_files(self):
         try:
@@ -248,15 +259,19 @@ class App(ctk.CTk):
         else:
             self.import_button.configure(state="disabled")
 
-        self.loader_label.place(relx=0.5, rely=0.45, anchor="center")
-        self.loader_text.place(relx=0.5, rely=0.55, anchor="center")
-        self.rotate_loader()
+        self.progress.place(
+            relx=0.5,
+            rely=0.5,
+            anchor="center"
+        )
+
+        self.progress.start()
 
     def hide_loader(self):
         self.loading = False
-        self.loader_label.place_forget()
-        self.loader_text.place_forget()
+        self.progress.stop()
 
+        self.progress.place_forget()
     def rotate_loader(self):
         if not self.loading:
             return
@@ -267,7 +282,7 @@ class App(ctk.CTk):
 
         self.loader_index = (self.loader_index + 1) % len(self.loader_frames)
 
-        self.after(50, self.rotate_loader)
+        self.after(100, self.rotate_loader)
 
     def on_files_loaded(self, files):
         if not files:
@@ -319,71 +334,21 @@ class App(ctk.CTk):
             self.update_import_button()
             self.import_button.configure(state="normal")
 
-    def build_file_list(self):
-        if not self.file_frame:
-            return
-        
-        self.file_widgets.clear()
-
-        for file in self.selected_files:
-            item_frame = ctk.CTkFrame(self.file_frame)
-            self.file_widgets[file] = item_frame
-            item_frame.pack(fill="x", padx=10, pady=5)
-            
-            # Diviser le frame en 3 colonnes : delete, nom, like
-            item_frame.grid_columnconfigure(0, weight=0) 
-            item_frame.grid_columnconfigure(1, weight=1)
-            item_frame.grid_columnconfigure(2, weight=0)
-
-            nom = Path(file).name
-
-            # label.pack(side="left", padx=10)
-
-            delete_btn = ctk.CTkButton(
-                item_frame,
-                text="",
-                image=remove_icon,
-                width=30,
-                height=30,
-                corner_radius=15,
-                fg_color="transparent",
-                hover=False,
-                # hover_color="#ee887f",
-                command=lambda f=file: self.remove_file(f)
-            )
-            delete_btn.grid(row=0, column=0, padx=10)
-
-            label = ctk.CTkLabel(item_frame, text=nom, anchor="center")
-            label.grid(row=0, column=1)
-
-            like_state = self.selected_files[file]
-            like_btn = ctk.CTkButton(
-                item_frame,
-                text="",
-                width=30,
-                height=30,
-                image=heart_on if like_state else heart_off,
-                corner_radius=15,
-                fg_color="transparent",
-                hover=False,
-                # hover_color="#F36C19",
-                # command=lambda f=file, b=like_btn: self.toggle_like(f, b)
-            )
-            like_btn.configure(command=lambda f=file, b=like_btn: self.toggle_like(f, b))
-            like_btn.grid(row=0, column=2, padx=10)
 
     def refresh_file_list(self):
         if not self.file_frame:
             return
 
-        search_text = self.search_entry.get().lower()
+        search_text = self.search_entry.get().lower().strip()
 
         for file, frame in self.file_widgets.items():
             nom = Path(file).name.lower()
 
-            if search_text and search_text not in nom:
+            should_show = (not search_text or search_text in nom)
+            is_visible = bool(frame.winfo_manager())
+            if not should_show and is_visible:
                 frame.pack_forget()  
-            else:
+            elif should_show and not is_visible:
                 frame.pack(fill="x", padx=10, pady=5) 
 
     def update_start_button(self):
@@ -408,7 +373,6 @@ class App(ctk.CTk):
         # activer/désactiver selon likes
         self.start_button.configure(state="normal" if likes_count >= 3 else "disabled")
 
-
     def add_new_files_to_ui(self, files):
         if not self.file_frame:
             return
@@ -432,7 +396,7 @@ class App(ctk.CTk):
             delete_btn = ctk.CTkButton(
                 item_frame,
                 text="",
-                image=remove_icon,
+                image=self.remove_icon,
                 width=30,
                 height=30,
                 corner_radius=15,
@@ -452,7 +416,7 @@ class App(ctk.CTk):
                 text="",
                 width=30,
                 height=30,
-                image=heart_on if like_state else heart_off,
+                image=self.heart_on if like_state else self.heart_off,
                 corner_radius=15,
                 fg_color="transparent",
                 hover=False
@@ -484,14 +448,22 @@ class App(ctk.CTk):
         """Cette fonction s'exécute dans un thread séparé pour éviter de bloquer l'interface utilisateur.
         Elle gère tout le processus de recommandation, de l'extraction des embeddings à la génération de la playlist, et met à jour l'interface en conséquence."""
         try:
-
-            # Initialiser la base de données, charger le modèle et générer la playlist
-            table = initialize_database(db_path="./MusicRecommenderDB")
-            session = load_cnn14(onnx_path="cnn14_int8.onnx")
+            # Vérifier que le modèle est chargé avant de continuer
+            if self.session is None or self.table is None:
+                self.after(
+                    0,
+                    lambda: show_toast(
+                        self,
+                            "Initialisation en cours..."
+                    )
+                )
+                return
+            
+            # Generer la playlist recommandée
             playlist = recommend_playlist(
                 path_dict=self.get_selected_files(),
-                session=session,
-                table=table,
+                session=self.session,
+                table=self.table,
                 lambda_mmr=0.7
             )
             make_m3u(playlist_paths=playlist, output_path="playlist.m3u8")
@@ -537,3 +509,110 @@ class App(ctk.CTk):
 
         # Afficher un message d'erreur à l'utilisateur
         show_toast(self, f"Erreur : {error}")
+
+    def validate_files(self, file_paths):
+
+        valid_files = {}
+        invalid_count = 0
+
+        try:
+
+            for path in file_paths:
+
+                if path in self.selected_files:
+                    continue
+
+                if is_audio_file(path) and is_valid_media(path):
+                    valid_files[path] = False
+                else:
+                    invalid_count += 1
+
+            self.after(
+                0,
+                lambda: self.on_validation_complete(
+                    valid_files,
+                    invalid_count
+                )
+            )
+
+        except Exception as e:
+
+            self.after(
+                0,
+                lambda: self._on_validation_error(e)
+            )
+
+    def on_validation_complete(
+        self,
+        valid_files,
+        invalid_count
+    ):
+
+        self.hide_loader()
+
+        if invalid_count > 0:
+            show_toast(
+                self,
+                f"{invalid_count} fichiers ignorés"
+            )
+
+        if not valid_files:
+            show_toast(
+                self,
+                "Aucun fichier audio valide sélectionné"
+            )
+            return
+
+        if len(valid_files) <= 3:
+            show_toast(
+                self,
+                "Importez au moins 4 fichiers\npour de meilleures recommandations!"
+            )
+
+        self.on_files_loaded(valid_files)
+
+    def preload_resources(self):
+
+        try:
+
+            self.session = load_musicnn(
+                onnx_path="./msd-musicnn-1.onnx"
+            )
+
+            self.table = initialize_database(
+                db_path="./MusicRecommenderDB"
+            )
+
+        except Exception as e:
+
+            self.after(
+                0,
+                lambda: show_toast(
+                    self,
+                    f"Erreur initialisation : {e}"
+                )
+            )
+
+    def on_search(self, event=None):
+
+        if self.search_after_id:
+
+            self.after_cancel(
+                self.search_after_id
+            )
+
+        self.search_after_id = self.after(
+            300,
+            self.refresh_file_list
+        )
+
+    def _on_validation_error(self, error):
+
+        self.hide_loader()
+
+        show_toast(
+            self,
+            f"Erreur lors de la validation : {error}"
+        )
+
+        self.update_import_button()

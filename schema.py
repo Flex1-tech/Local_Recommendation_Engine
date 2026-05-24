@@ -18,4 +18,4 @@ class TrackEmbeddingModel(LanceModel):
     file_size_bytes: int
 
     # Embedding de la piste
-    vector: Vector(2048) = Field(description="Embedding audio de dimenson 2048")  # type: ignore
+    vector: Vector(200) = Field(description="Embedding audio de dimenson 200")  # type: ignore
