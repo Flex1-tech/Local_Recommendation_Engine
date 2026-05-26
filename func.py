@@ -1,12 +1,65 @@
 import sys
-from PIL import Image
 import customtkinter as ctk
 from tkinter import filedialog
-import tkinter as tk
 import fleep
-from mutagen import File
 import subprocess
+from pathlib import Path
+from shutil import which
+import subprocess
+import platform
 
+
+def find_vlc():
+    # 1. Recherche dans le PATH système
+    vlc = which("vlc")
+
+    if vlc:
+        return vlc
+
+    system = platform.system()
+
+    # 2. Fallback Windows
+    if system == "Windows":
+
+        possible_paths = []
+
+        for drive in "CDEFGHIJKLMNOPQRSTUVWXYZ":
+            possible_paths.extend([
+                Path(f"{drive}:/Program Files/VideoLAN/VLC/vlc.exe"),
+                Path(f"{drive}:/Program Files (x86)/VideoLAN/VLC/vlc.exe"),
+            ])
+
+        for path in possible_paths:
+            if path.exists():
+                return str(path)
+
+    # 3. Fallback Linux
+    elif system == "Linux":
+
+        linux_paths = [
+            Path("/usr/bin/vlc"),
+            Path("/usr/local/bin/vlc"),
+            Path("/snap/bin/vlc"),
+            Path("/flatpak/exports/bin/org.videolan.VLC"),
+        ]
+
+        for path in linux_paths:
+            if path.exists():
+                return str(path)
+
+    # 4. Fallback macOS
+    elif system == "Darwin":
+
+        mac_paths = [
+            Path("/Applications/VLC.app/Contents/MacOS/VLC"),
+            Path("~/Applications/VLC.app/Contents/MacOS/VLC").expanduser(),
+        ]
+
+        for path in mac_paths:
+            if path.exists():
+                return str(path)
+
+    return None
 
 
 def get_media_type(filepath):

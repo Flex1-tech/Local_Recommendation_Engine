@@ -2,7 +2,7 @@ from functools import partial
 import subprocess
 from PIL import Image
 import customtkinter as ctk
-from func import is_audio_file, is_valid_media, open_file, show_toast
+from func import find_vlc, is_audio_file, is_valid_media, open_file, show_toast
 from extraction import recommend_playlist, initialize_database, load_musicnn, make_m3u
 from pathlib import Path
 import threading 
@@ -484,15 +484,15 @@ class App(ctk.CTk):
 
         # Tenter de lancer VLC pour lire la playlist
         try:
-            subprocess.Popen(["vlc", "playlist.m3u8"])
+            vlc_path = find_vlc()
+
+            if not vlc_path:
+                # Recommander d'ajouter VlC au PATH pour une meilleure expérience ou d'ouvrir le fichier playlist.m3u8 manuellement avec VLC
+                show_toast(self, "Astuce : Ajoutez VLC à votre PATH pour une meilleure expérience,\n ou ouvrez manuellement playlist.m3u8 avec VLC.")
+                raise FileNotFoundError("VLC introuvable.")
+        
+            subprocess.Popen([vlc_path, "playlist.m3u8"])
             show_toast(self, "VLC lancé avec succès !")
-        except FileNotFoundError:
-            vlc_windows_path = Path("C:/Program Files/VideoLAN/VLC/vlc.exe")
-            if vlc_windows_path.exists():
-                subprocess.Popen([str(vlc_windows_path), "playlist.m3u8"])
-                show_toast(self, "VLC lancé avec succès !")
-            else:
-                show_toast(self, "Erreur : VLC introuvable dans le PATH.")
         except Exception as e:
             show_toast(self, f"Erreur imprévue : {e}")
 
