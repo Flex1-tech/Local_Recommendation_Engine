@@ -70,7 +70,7 @@ def open_file():
         filetypes=[("All files", "*.*")]
     )
 
-def show_toast(root, message, icon=None, duration=30000):
+def show_toast(root, message, icon=None, duration=3000):
 
     error_icon = icon if icon else root.toast_icon
 

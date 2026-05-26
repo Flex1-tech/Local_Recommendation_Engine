@@ -7,38 +7,26 @@
 ![Offline](https://img.shields.io/badge/Mode-Offline-success?style=for-the-badge)  
 ![License](https://img.shields.io/badge/License-Custom-red?style=for-the-badge)
 
-> **Système intelligent de recommandation musicale local basé sur l’analyse audio par IA, les embeddings vectoriels et un moteur de classement MMR.**
+> **Système intelligent de recommandation musicale local basé sur l'analyse audio par IA, les embeddings vectoriels et un moteur de classement MMR.**
 
 ---
 
 # 📋 Table des matières
 
 - [Aperçu](#-aperçu)
-
 - [Fonctionnement](#-fonctionnement)
-
 - [Architecture](#-architecture)
-
 - [Pipeline ML](#-pipeline-ml)
-
+- [⚡ Téléchargement rapide — Windows](#-téléchargement-rapide--windows-sans-installation)
 - [Installation](#-installation)
-
 - [Utilisation](#-utilisation)
-
 - [Base de données](#-base-de-données)
-
 - [Algorithme MMR](#-algorithme-mmr)
-
 - [Interface utilisateur](#-interface-utilisateur)
-
 - [Différences avec la v1](#-différences-avec-la-v1)
-
 - [Développement](#-développement)
-
 - [Captures](#-captures)
-
 - [Crédits](#-crédits)
-
 - [Licence](#-licence)
 
 ---
@@ -47,26 +35,18 @@
 
 Musical Recommender System v2 est une application desktop moderne permettant de générer automatiquement des playlists personnalisées à partir de vos fichiers audio locaux.
 
-Le système fonctionne entièrement **hors-ligne** et apprend les préférences musicales de l’utilisateur à partir de morceaux likés.
+Le système fonctionne entièrement **hors-ligne** et apprend les préférences musicales de l'utilisateur à partir de morceaux likés.
 
 ## Fonctionnalités principales
 
 - Interface graphique moderne avec **CustomTkinter**
-
 - Analyse audio via **Musicnn / ONNX Runtime**
-
 - Base de données vectorielle locale avec **LanceDB**
-
 - Cache intelligent des embeddings avec **BLAKE3**
-
 - Classement intelligent avec **MMR**
-
 - Génération automatique de playlist `.m3u8`
-
 - Lancement direct dans **VLC**
-
 - Support des thèmes clair / sombre
-
 - Import multi-fichiers audio
 
 ---
@@ -159,6 +139,38 @@ so.inter_op_num_threads = 1
 
 ---
 
+# ⚡ Téléchargement rapide — Windows (sans installation)
+
+> **Vous n'êtes pas développeur et vous voulez juste essayer l'application ?**  
+> Pas besoin d'installer Python, ni de compiler quoi que ce soit.
+
+## Étapes
+
+**1. Téléchargez le fichier ZIP**
+
+👉 [**MusicRecommender.zip**](https://github.com/Flex1-tech/Local_Recommendation_Engine/releases/download/v2.0.0/MusicRecommender.zip)
+
+**2. Extrayez le ZIP**
+
+Faites un clic droit sur le fichier téléchargé → **Extraire tout...** → choisissez un dossier.
+
+> ⚠️ Ne lancez pas l'application directement depuis le ZIP — extrayez d'abord.
+
+**3. Installez VLC** *(si ce n'est pas déjà fait)*
+
+VLC est nécessaire pour lire la playlist générée.  
+👉 https://www.videolan.org/vlc/
+
+**4. Lancez l'application**
+
+Ouvrez le dossier extrait et double-cliquez sur **`MusicRecommender.exe`**.
+
+---
+
+> 💡 **Note Windows** : Si Windows affiche un avertissement de sécurité ("Windows a protégé votre ordinateur"), cliquez sur **Informations complémentaires** puis **Exécuter quand même**. Cela est normal pour les applications non signées.
+
+---
+
 # 🗄️ Base de données
 
 Les embeddings audio sont stockés localement dans **LanceDB**.
@@ -167,10 +179,8 @@ Chaque morceau possède un identifiant unique basé sur un hash **BLAKE3** du co
 
 Ainsi :
 
-- un embedding n’est calculé qu’une seule fois ;
-
+- un embedding n'est calculé qu'une seule fois ;
 - déplacer ou renommer un fichier ne force pas un recalcul ;
-
 - les chemins sont mis à jour automatiquement.
 
 ```python
@@ -186,10 +196,9 @@ class TrackEmbeddingModel(LanceModel):
 
 # 🎲 Algorithme MMR
 
-Le système utilise **Maximal Marginal Relevance (MMR)** afin d’équilibrer :
+Le système utilise **Maximal Marginal Relevance (MMR)** afin d'équilibrer :
 
 - la pertinence musicale ;
-
 - la diversité des recommandations.
 
 ## Formule
@@ -211,19 +220,19 @@ MMR_score =
 
 # 🚀 Installation
 
+> **Vous êtes développeur et souhaitez modifier ou contribuer au projet ?**  
+> Suivez les étapes ci-dessous. Sinon, consultez la section [Téléchargement rapide](#-téléchargement-rapide--windows-sans-installation) ci-dessus.
+
 ## Prérequis
 
 - Python 3.10+
-
 - FFmpeg
-
 - VLC Media Player
 
 ## Clonage
 
 ```bash
 git clone https://github.com/Flex1-tech/Local_Recommendation_Engine.git
-
 cd musical-recommender-v2
 ```
 
@@ -278,7 +287,7 @@ python main.py
 
 # 🎬 Demo
 
-## Écran d’accueil
+## Écran d'accueil
 
 <p align="center">
   <img src="demo/Home.png" width="90%" alt="Home Screen">
@@ -331,17 +340,11 @@ python main.py
 ## Caractéristiques UI
 
 - Interface responsive avec `grid`
-
-- Thread dédié pour l’inférence
-
+- Thread dédié pour l'inférence
 - UI non bloquante
-
 - Loader animé
-
 - Barre de recherche dynamique
-
 - Gestion thème clair/sombre
-
 - Toasts et feedback utilisateur
 
 ## Palette
@@ -397,22 +400,18 @@ print(v.shape if v is not None else 'None')
 # 🙏 Crédits
 
 - **Musicnn / Essentia**
-  
   - [Index of /models/feature-extractors/musicnn/](https://essentia.upf.edu/models/feature-extractors/musicnn/)
 
 - **CustomTkinter**
-  
-  - [GitHub - TomSchimansky/CustomTkinter: A modern and customizable python UI-library based on Tkinter · GitHub](https://github.com/TomSchimansky/CustomTkinter)
+  - [GitHub - TomSchimansky/CustomTkinter](https://github.com/TomSchimansky/CustomTkinter)
 
 - **LanceDB**
-  
   - [https://lancedb.com/](https://lancedb.com/)
 
 - **BLAKE3**
-  
-  - [GitHub - BLAKE3-team/BLAKE3: the official Rust and C implementations of the BLAKE3 cryptographic hash function · GitHub](https://github.com/BLAKE3-team/BLAKE3)
+  - [GitHub - BLAKE3-team/BLAKE3](https://github.com/BLAKE3-team/BLAKE3)
 
---- 
+---
 
 ## Custom Non-Commercial License (CNC-L)
 
@@ -427,33 +426,30 @@ En téléchargeant, installant ou utilisant le Logiciel, vous acceptez d'être l
 L'Auteur concède par la présente une licence mondiale, non exclusive et non transférable, permettant d'utiliser le Logiciel à titre gratuit exclusivement pour les finalités suivantes :
 
 - **Usage Personnel** : Utilisation privée par un individu à des fins strictement non lucratives.
-
 - **Usage Éducatif et Recherche** : Utilisation au sein d'établissements scolaires, universitaires ou de laboratoires de recherche publique.
-
 - **Expérimentation** : Tests, évaluation technique et contributions non commerciales au code source.
-2. **Restrictions et Usages Commerciaux Interdits***
+
+2. **Restrictions et Usages Commerciaux Interdits**
 
 Tout usage non expressément autorisé à l'Article 1 est formellement interdit sans l'obtention préalable d'une Licence Commerciale écrite et signée par l'Auteur. Sont notamment qualifiés d'usages commerciaux :
 
 - **Intégration** : L'inclusion du Logiciel, en tout ou partie, dans un produit, service ou infrastructure d'une entité commerciale.
-
 - **Monétisation** : L'utilisation du Logiciel pour générer des revenus, directs ou indirects (abonnements, services payants, support technique facturé, affichage publicitaire).
-
 - **Redistribution** : La redistribution, la revente ou la sous-licence du Logiciel à des fins commerciales.
-3. **Processus de Commercialisation et Partage de Revenus***
+
+3. **Processus de Commercialisation et Partage de Revenus**
 
 Si vous souhaitez exploiter le Logiciel à des fins commerciales, vous devez impérativement régulariser votre situation :
 
 - **Demande Obligatoire** : Contactez l'Auteur avant toute mise en exploitation.
-
 - **Accord au Cas par Cas** : Les modalités d'octroi de la licence commerciale feront l'objet d'un contrat d'exploitation distinct.
-
 - **Compensation et Royalties** : L'accord commercial exigera une compensation financière, sous forme de redevances fixes ou d'un partage de revenus (royalties) proportionnel aux gains générés par l'exploitation du Logiciel.
-4. **Violation et Résiliation***
+
+4. **Violation et Résiliation**
 
 Toute utilisation du Logiciel en violation de la présente Licence entraînera la résiliation automatique et immédiate de vos droits d'usage. L'Auteur se réserve le droit d'engager des poursuites judiciaires pour contrefaçon et de réclamer des dommages-intérêts équivalents au préjudice financier subi.
 
-**Contact pour les Licences Professionnelles***
+**Contact pour les Licences Professionnelles**
 
 Pour toute demande de partenariat, de licence commerciale ou de devis :  
 📩 **[Mail](mailto:sethakplogan@gmail.com)**

@@ -353,26 +353,25 @@ class App(ctk.CTk):
 
     def update_start_button(self):
         file_count = len(self.selected_files)
-
-        # compter les likes
         likes_count = sum(self.selected_files.values())
 
-        # aucun fichier -> cacher bouton
         if file_count == 0:
             self.bottom_bar.grid_forget()
             return
 
-        # Afficher le bottom bar si pas déjà fait
+        # Afficher la bottom bar si pas déjà fait
         if not self.bottom_bar.winfo_ismapped():
             self.bottom_bar.grid(row=3, column=0, sticky="ew", pady=20)
 
-        # afficher bouton si fichiers présents
+        # Afficher le bouton start une seule fois
         if not self.start_button.winfo_ismapped():
             self.start_button.pack(side="left", padx=10)
 
-        # activer/désactiver selon likes
-        self.start_button.configure(state="normal" if likes_count >= 3 else "disabled")
-
+        # Juste changer l'état, sans toucher au layout
+        new_state = "normal" if likes_count >= 3 else "disabled"
+        if self.start_button.cget("state") != new_state:
+            self.start_button.configure(state=new_state)
+        
     def add_new_files_to_ui(self, files):
         if not self.file_frame:
             return
