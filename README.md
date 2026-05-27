@@ -1,4 +1,4 @@
-# 🎵 Musical Recommender System — Version 2
+# Musical Recommender System — Version 2
 
 ![Python](https://img.shields.io/badge/Python-3.10+-blue?style=for-the-badge&logo=python)  
 ![ONNX Runtime](https://img.shields.io/badge/ONNX-Runtime-orange?style=for-the-badge)  
@@ -11,27 +11,27 @@
 
 ---
 
-# 📋 Table des matières
+# Table des matières
 
-- [Aperçu](#-aperçu)
-- [Fonctionnement](#️⃣-fonctionnement)
-- [Architecture](#️⃣-architecture)
-- [Pipeline ML](#-pipeline-ml)
-- [Téléchargement rapide — Windows](#-téléchargement-rapide--windows-sans-installation)
-- [Installation](#-installation)
-- [Utilisation](#️⃣-utilisation)
-- [Base de données](#️⃣-base-de-données)
-- [Algorithme MMR](#-algorithme-mmr)
-- [Interface utilisateur](#️⃣-interface-utilisateur)
-- [Différences avec la v1](#-différences-avec-la-v1)
-- [Développement](#-développement)
-- [Demo](#-demo)
-- [Crédits](#-crédits)
-- [Licence](#-licence)
+- [Aperçu](#aperçu)
+- [Fonctionnement](#fonctionnement)
+- [Architecture](#architecture)
+- [Pipeline ML](#pipeline-ml)
+- [Téléchargement rapide — Windows](#téléchargement-rapide--windows-sans-installation)
+- [Installation](#installation)
+- [Utilisation](#utilisation)
+- [Base de données](#base-de-données)
+- [Algorithme MMR](#algorithme-mmr)
+- [Interface utilisateur](#interface-utilisateur)
+- [Différences avec la v1](#différences-avec-la-v1)
+- [Développement](#développement)
+- [Demo](#demo)
+- [Crédits](#crédits)
+- [Licence](#licence)
 
 ---
 
-# 🎯 Aperçu
+# Aperçu
 
 Musical Recommender System v2 est une application desktop moderne permettant de générer automatiquement des playlists personnalisées à partir de vos fichiers audio locaux.
 
@@ -51,7 +51,7 @@ Le système fonctionne entièrement **hors-ligne** et apprend les préférences 
 
 ---
 
-# ⚙️ Fonctionnement
+# Fonctionnement
 
 ## Workflow global
 
@@ -73,7 +73,7 @@ Le système fonctionne entièrement **hors-ligne** et apprend les préférences 
 
 ---
 
-# 🏗️ Architecture
+# Architecture
 
 ```text
 musical-recommender-v2/
@@ -101,7 +101,7 @@ musical-recommender-v2/
 
 ---
 
-# 🧠 Pipeline ML
+# Pipeline ML
 
 ```text
 Audio File
@@ -156,7 +156,7 @@ Faites un clic droit sur le fichier téléchargé → **Extraire tout...** → c
 
 > ⚠️ Ne lancez pas l'application directement depuis le ZIP — extrayez d'abord.
 
-**3. Installez VLC** *(si ce n'est pas déjà fait)*
+**3. Installez VLC** _(si ce n'est pas déjà fait)_
 
 VLC est nécessaire pour lire la playlist générée.  
 👉 https://www.videolan.org/vlc/
@@ -171,7 +171,7 @@ Ouvrez le dossier extrait et double-cliquez sur **`MusicRecommender.exe`**.
 
 ---
 
-# 🗄️ Base de données
+# Base de données
 
 Les embeddings audio sont stockés localement dans **LanceDB**.
 
@@ -194,7 +194,7 @@ class TrackEmbeddingModel(LanceModel):
 
 ---
 
-# 🎲 Algorithme MMR
+# Algorithme MMR
 
 Le système utilise **Maximal Marginal Relevance (MMR)** afin d'équilibrer :
 
@@ -218,7 +218,7 @@ MMR_score =
 
 ---
 
-# 🚀 Installation
+# Installation
 
 > **Vous êtes développeur et souhaitez modifier ou contribuer au projet ?**  
 > Suivez les étapes ci-dessous. Sinon, consultez la section [Téléchargement rapide](#-téléchargement-rapide--windows-sans-installation) ci-dessus.
@@ -267,7 +267,7 @@ vlc --version
 
 ---
 
-# ▶️ Utilisation
+# Utilisation
 
 ```bash
 python main.py
@@ -285,7 +285,7 @@ python main.py
 
 ---
 
-# 🎬 Demo
+# Demo
 
 ## Écran d'accueil
 
@@ -335,7 +335,7 @@ python main.py
 
 ---
 
-# 🖥️ Interface utilisateur
+# Interface utilisateur
 
 ## Caractéristiques UI
 
@@ -356,21 +356,21 @@ python main.py
 
 ---
 
-# 🔄 Différences avec la v1
+# Différences avec la v1
 
 | Fonctionnalité        | v1      | v2      |
 | --------------------- | ------- | ------- |
-| Interface moderne     | ❌       | ✅       |
-| Recherche dynamique   | ❌       | ✅       |
-| Threading UI          | ❌       | ✅       |
-| LanceDB               | ❌       | ✅       |
-| Cache embeddings      | ❌       | ✅       |
-| MMR Ranking           | ❌       | ✅       |
+| Interface moderne     | ❌      | ✅      |
+| Recherche dynamique   | ❌      | ✅      |
+| Threading UI          | ❌      | ✅      |
+| LanceDB               | ❌      | ✅      |
+| Cache embeddings      | ❌      | ✅      |
+| MMR Ranking           | ❌      | ✅      |
 | Playlist intelligente | Basique | Avancée |
 
 ---
 
-# 🔧 Développement
+# Développement
 
 ## Vérifier le modèle
 
@@ -397,7 +397,7 @@ print(v.shape if v is not None else 'None')
 
 ---
 
-# 🙏 Crédits
+# Crédits
 
 - **Musicnn / Essentia**
   - [Index of /models/feature-extractors/musicnn/](https://essentia.upf.edu/models/feature-extractors/musicnn/)
@@ -456,4 +456,4 @@ Pour toute demande de partenariat, de licence commerciale ou de devis :
 
 ---
 
-> *"Écoutez. Likez. Découvrez. Votre musique, parfaitement orchestrée."*
+> _"Écoutez. Likez. Découvrez. Votre musique, parfaitement orchestrée."_
