@@ -17,7 +17,7 @@
 - [Fonctionnement](#-fonctionnement)
 - [Architecture](#-architecture)
 - [Pipeline ML](#-pipeline-ml)
-- [⚡ Téléchargement rapide — Windows](#-téléchargement-rapide--windows-sans-installation)
+- [Téléchargement rapide — Windows](#-téléchargement-rapide--windows-sans-installation)
 - [Installation](#-installation)
 - [Utilisation](#-utilisation)
 - [Base de données](#-base-de-données)
@@ -139,7 +139,7 @@ so.inter_op_num_threads = 1
 
 ---
 
-# ⚡ Téléchargement rapide — Windows (sans installation)
+# Téléchargement rapide — Windows (sans installation)
 
 > **Vous n'êtes pas développeur et vous voulez juste essayer l'application ?**  
 > Pas besoin d'installer Python, ni de compiler quoi que ce soit.
