@@ -23,6 +23,7 @@
 - [Base de données](#base-de-données)
 - [Algorithme MMR](#algorithme-mmr)
 - [Interface utilisateur](#interface-utilisateur)
+- [Limitations et améliorations](#limitations-et-améliorations)
 - [Différences avec la v1](#différences-avec-la-v1)
 - [Développement](#développement)
 - [Demo](#demo)
@@ -355,6 +356,28 @@ python main.py
 | Hover            | `#F36C19` |
 
 ---
+
+# Limitations et améliorations
+
+## Limites actuelles
+
+- **Cold start** : lorsqu’une chanson n’a jamais été analysée, le modèle doit calculer son embedding avant de pouvoir l’utiliser dans les recommandations.
+- **Temps de traitement** : pour une grande quantité de fichiers audio, le calcul initial des vecteurs peut prendre du temps.
+- **Différence entre morceaux connus et inconnus** : pour les chansons déjà présentes dans la base, les vecteurs sont récupérés directement depuis LanceDB, ce qui est plus rapide que le recalcul complet.
+
+## Travaux à faire
+
+- Rendre l’interface plus fluide et plus réactive pendant les traitements lourds.
+- Améliorer l’expérience utilisateur avec un chargement plus progressif et des retours visuels plus clairs.
+- Permettre de lier un dossier à l’application pour simplifier l’import et le suivi des bibliothèques musicales.
+- Ajouter une clé d’issue ou un score de recommandation basé sur les écoutes passées.
+- Étendre le moteur de recommandation avec davantage de signaux de préférence pour personnaliser les résultats.
+
+## Améliorations possibles
+
+- Mettre en cache davantage d’états intermédiaires pour réduire le temps de recalcul.
+- Ajouter une indexation incrémentale pour traiter uniquement les nouveaux fichiers.
+- Affiner le tri et la présentation des playlists pour une navigation plus fluide.
 
 # Différences avec la v1
 
